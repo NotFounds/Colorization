@@ -12,9 +12,9 @@ import model as M
 import util
 
 def main():
-    # Set up a neural network to train
-    model = M.Colorization(2, 3)
     date = datetime.datetime.today().strftime("%Y-%m-%d %H%M%S")
+    
+    model = M.Colorization(2, 3)
     
     # Setup an optimizer
     optimizer = chainer.optimizers.Adam() #0.0002, 0.5
