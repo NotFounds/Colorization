@@ -9,9 +9,9 @@ import matplotlib.pyplot as plt
 
 def output2img(y, flag=False):
     if flag:
-        diff = np.max(y) - np.min(y)
-        med = diff / 2
-        return np.asarray((np.transpose(y, (0, 2, 3, 1)) + diff) * (255 / diff), dtype=np.uint8)
+        _max = np.max(y)
+        _min = np.min(y)
+        return np.asarray((np.transpose(y, (0, 2, 3, 1)) - _min) * (255 / (_max - _min)), dtype=np.uint8)
     else:
         return np.asarray((np.transpose(y, (0, 2, 3, 1)) + 1) * 127.5, dtype=np.uint8)
 
