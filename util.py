@@ -2,10 +2,7 @@ import os
 import os.path
 import numpy as np
 import chainer
-import chainer.functions as F
-import chainer.links as L
 from PIL import Image
-import matplotlib.pyplot as plt
 
 def output2img(y, flag=False):
     if flag:
@@ -26,28 +23,28 @@ def read_test_data(input, output=None, dtype=int):
 
 def _read_rgb_image(dir, dtype):
     paths = os.listdir(dir)
-    imageData = []
+    images = []
     for path in paths:
         img = Image.open(dir + path)
-        r,g,b,a = img.split()
-        rImgData = np.asarray(np.float32(r)/255.0)
-        gImgData = np.asarray(np.float32(g)/255.0)
-        bImgData = np.asarray(np.float32(b)/255.0)
-        imgData = np.asarray([rImgData, gImgData, bImgData])
-        imageData.append(imgData)
-    return imageData
+        r, g, b, a = img.split()
+        r_data = np.asarray(np.float32(r)/255.0)
+        g_data = np.asarray(np.float32(g)/255.0)
+        b_data = np.asarray(np.float32(b)/255.0)
+        img_data = np.asarray([r_data, g_data, b_data])
+        images.append(img_data)
+    return images
 
 def _read_gray_image(dir, dtype):
     paths = os.listdir(dir)
-    imageData = []
+    images = []
     for path in paths:
         img = Image.open(dir + path)
-        r,g,b,a = img.split()
+        r, g, b, a = img.split()
         data = np.asarray(np.float32(r)/255.0)
-        imgData = np.asarray([data])
-        imageData.append(imgData)
-    return imageData
+        img_data = np.asarray([data])
+        images.append(img_data)
+    return images
 
 def make_dir(dir):
-    if (os.path.isdir(dir) == False):
+    if not os.path.isdir(dir):
         os.mkdir(dir)
