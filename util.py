@@ -17,8 +17,11 @@ def output2img(y, flag=False):
 def read_train_data(input, output, dtype=int):
     return chainer.datasets.TupleDataset(_read_gray_image(input, dtype), _read_rgb_image(output, dtype))
 
-def read_test_data(input, dtype=int):
-    return chainer.datasets.TupleDataset(_read_gray_image(input, dtype))
+def read_test_data(input, output=None, dtype=int):
+    if (output is None):
+        return chainer.datasets.TupleDataset(_read_gray_image(input, dtype))
+    else:
+        return chainer.datasets.TupleDataset(_read_gray_image(input, dtype), _read_rgb_image(output, dtype))
 
 def _read_rgb_image(dir, dtype):
     paths = os.listdir(dir)
