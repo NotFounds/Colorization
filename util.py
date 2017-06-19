@@ -1,4 +1,5 @@
 import os
+import os.path
 import numpy as np
 import chainer
 import chainer.functions as F
@@ -46,3 +47,7 @@ def _read_gray_image(dir, dtype):
         imgData = np.asarray([data])
         imageData.append(imgData)
     return imageData
+
+def make_dir(dir):
+    if (os.path.isdir(dir) == False):
+        os.mkdir(dir)

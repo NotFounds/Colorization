@@ -30,7 +30,9 @@ def main():
     serializers.load_npz(model_data, model)
     serializers.load_npz(opt_data, optimizer)
    
+    # output test image
     output_dir = './output_images/'
+    util.make_dir(output_dir)
 
     N = test._length
     for j in range(N):

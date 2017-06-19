@@ -58,24 +58,29 @@ def main():
         #sys.stderr.write("epoch: {epoch}\t\tloss: {sum_loss}\n".format(**locals()))
         print("epoch: {epoch}\t\tloss: {sum_loss}".format(**locals()))
     
+    elapsed_time = time.time() - start
+    print ("elapsed_time:{0}".format(elapsed_time) + "[sec]")
+
+    # save loss graph
+    e = [d[0] for d in losses]
+    l = [d[1] for d in losses]
+    plt.plot(e, l, color="red")
+    plt.savefig('{date}_graph.jpg'.format(**locals()))
+    
+    # save model/optimizer
+    serializers.save_npz('{date}.model'.format(**locals()), model)
+    serializers.save_npz('{date}.state'.format(**locals()), optimizer)
+
+    # output test image
+    output_dir = './output_images/'
+    util.make_dir(output_dir)
+
     test_N = test._length
     for j in range(test_N):
         x = test.__getitem__(j)[0]
         y = model(np.asarray([x]))
         img = util.output2img(y.data)
-        Image.fromarray(img[0]).save('{date}_img{j}.png'.format(**locals()))
-
-    # save model/optimizer
-    serializers.save_npz('{date}.model'.format(**locals()), model)
-    serializers.save_npz('{date}.state'.format(**locals()), optimizer)
-
-    elapsed_time = time.time() - start
-    print ("elapsed_time:{0}".format(elapsed_time) + "[sec]")
-
-    e = [d[0] for d in losses]
-    l = [d[1] for d in losses]
-    plt.plot(e, l, color="red")
-    plt.savefig('{date}_graph.jpg'.format(**locals()))
+        Image.fromarray(img[0]).save('{output_dir}{date}_img{j}.png'.format(**locals()))
     
 if __name__ == '__main__':
     main()
