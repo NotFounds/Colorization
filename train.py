@@ -1,3 +1,5 @@
+import sys
+import argparse
 import datetime
 import time
 import numpy as np
@@ -10,7 +12,14 @@ import model as M
 import util
 
 def main():
-    print(chainer.__version__)
+    print('Chainer Version: ' + chainer.__version__)
+
+    parser = argparse.ArgumentParser(description='Colorization')
+    parser.add_argument('--batchsize', '-b', type=int, default=50)
+    parser.add_argument('--epoch', '-e', type=int, default=1000)
+    parser.add_argument('--out', '-o', default='./output/')
+    parser.add_argument('--debug', '-d', default=False)
+    args = parser.parse_args()
 
     start = time.time()
     date = datetime.datetime.today().strftime("%Y-%m-%d %H%M%S")
@@ -31,8 +40,8 @@ def main():
     test = util.read_test_data(test_in)
 
     data_n = len(train)
-    epoch_n = 1000
-    batch_n = 50
+    epoch_n = args.epoch
+    batch_n = args.batchsize
     print('DataSets:  {data_n}'.format(**locals()))
     print('Epoch:     {epoch_n}'.format(**locals()))
     print('BatchSize: {batch_n}'.format(**locals()))
@@ -56,25 +65,30 @@ def main():
 
         sum_loss /= batch_n
         losses.append([epoch, sum_loss])
-        #sys.stderr.write("epoch: {epoch}\t\tloss: {sum_loss}\n".format(**locals()))
+
+        if args.debug:
+            sys.stderr.write("epoch: {epoch}\t\tloss: {sum_loss}\n".format(**locals()))
         print("epoch: {epoch}\t\tloss: {sum_loss}".format(**locals()))
 
     elapsed_time = time.time() - start
-    print("elapsed_time:{0}".format(elapsed_time) + "[sec]")
+
+    if args.debug:
+        sys.stderr.write("elapsed_time: {0}".format(elapsed_time) + "[sec]")
+    print("elapsed_time: {0}".format(elapsed_time) + "[sec]")
+
+    # output test image
+    output_dir = args.out
+    util.make_dir(output_dir)
 
     # save loss graph
     x_val = [d[0] for d in losses]
     _loss = [d[1] for d in losses]
     plt.plot(x_val, _loss, color="red")
-    plt.savefig('{date}_graph.jpg'.format(**locals()))
+    plt.savefig('{output_dir}{date}_graph.jpg'.format(**locals()))
 
     # save model/optimizer
-    serializers.save_npz('{date}.model'.format(**locals()), model)
-    serializers.save_npz('{date}.state'.format(**locals()), optimizer)
-
-    # output test image
-    output_dir = './output_images/'
-    util.make_dir(output_dir)
+    serializers.save_npz('{output_dir}{date}.model'.format(**locals()), model)
+    serializers.save_npz('{output_dir}{date}.state'.format(**locals()), optimizer)
 
     test_n = len(test)
     for j in range(test_n):
