@@ -27,9 +27,9 @@ def _read_rgb_image(dir, dtype):
     for path in paths:
         img = Image.open(dir + path)
         r, g, b, a = img.split()
-        r_data = np.asarray(np.float32(r)/255.0)
-        g_data = np.asarray(np.float32(g)/255.0)
-        b_data = np.asarray(np.float32(b)/255.0)
+        r_data = np.asarray(np.float32(r)/127.5-1.0)
+        g_data = np.asarray(np.float32(g)/127.5-1.0)
+        b_data = np.asarray(np.float32(b)/127.5-1.0)
         img_data = np.asarray([r_data, g_data, b_data])
         images.append(img_data)
     return images
@@ -40,7 +40,7 @@ def _read_gray_image(dir, dtype):
     for path in paths:
         img = Image.open(dir + path)
         r, g, b, a = img.split()
-        data = np.asarray(np.float32(r)/255.0)
+        data = np.asarray(np.float32(r)/127.5-1.0)
         img_data = np.asarray([data])
         images.append(img_data)
     return images

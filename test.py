@@ -13,7 +13,7 @@ def main():
 
     parser = argparse.ArgumentParser(description='Colorization')
     parser.add_argument('--data', '-d', default='./test_256_gray/')
-    parser.add_argument('--model', '-m', default='./2017-06-15 181134.model')
+    parser.add_argument('--model', '-m', default='./example.model')
     parser.add_argument('--out', '-o', default='./output/')
     args = parser.parse_args()
 
@@ -39,7 +39,7 @@ def main():
         start = time.time()
         x = test.__getitem__(j)[0]
         y = model(np.asarray([x]))
-        img = util.output2img(y.data, True)
+        img = util.output2img(y.data)
         Image.fromarray(img[0]).save('{output_dir}{date}_img{j}.png'.format(**locals()))
         elapsed_time = round(time.time() - start, 5)
         print('time: {elapsed_time}[sec]\t{output_dir}{date}_img{j}.png'.format(**locals()))
