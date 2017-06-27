@@ -18,7 +18,7 @@ def main():
     parser.add_argument('--batchsize', '-b', type=int, default=50)
     parser.add_argument('--epoch', '-e', type=int, default=1000)
     parser.add_argument('--out', '-o', default='./output/')
-    parser.add_argument('--debug', '-d', default=False)
+    parser.add_argument('--debug', '-d', action='store_true')
     args = parser.parse_args()
 
     start = time.time()
