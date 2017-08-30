@@ -23,9 +23,6 @@ def main():
     parser.add_argument('--debug', '-d', action='store_true')
     args = parser.parse_args()
 
-    start = time.time()
-    date = datetime.datetime.today().strftime("%Y-%m-%d %H%M%S")
-
     # Set up a neural network to train
     model = M.Colorization(2, 3)
 
@@ -49,6 +46,13 @@ def main():
     print('Epoch:     {epoch_n}'.format(**locals()))
     print('BatchSize: {batch_n}'.format(**locals()))
 
+    output_dir = args.out
+    util.make_dir(output_dir)
+    print('Output dir:{output_dir}'.format(**locals()))
+
+    start = time.time()
+    date = datetime.datetime.today().strftime("%Y-%m-%d %H%M%S")
+
     losses = []
     for epoch in range(epoch_n):
         perm = np.random.permutation(data_n)
@@ -61,10 +65,8 @@ def main():
             t = train.__getitem__(idx)[1]
 
             optimizer.use_cleargrads()
-            #loss = F.mean_absolute_error(y[0], t)
             loss = F.mean_squared_error(y[0], t)
             loss.backward()
-            #optimizer.update(F.mean_absolute_error, y[0], t)
             optimizer.update(F.mean_squared_error, y[0], t)
             sum_loss += loss.data
 
@@ -75,7 +77,7 @@ def main():
             sys.stderr.write("epoch: {epoch}\t\tloss: {sum_loss}\n".format(**locals()))
             if epoch % 100 == 0:
                 serializers.save_npz('./output/{date}_epoch{epoch}.model'.format(**locals()), model)
-                serializers.save_npz('./output/{date}_epoch(epoch).state'.format(**locals()), optimizer)
+                serializers.save_npz('./output/{date}_epoch{epoch}.state'.format(**locals()), optimizer)
 
         print("epoch: {epoch}\t\tloss: {sum_loss}".format(**locals()))
 
@@ -84,10 +86,6 @@ def main():
     if args.debug:
         sys.stderr.write("elapsed_time: {0}".format(elapsed_time) + "[sec]")
     print("elapsed_time: {0}".format(elapsed_time) + "[sec]")
-
-    # output test image
-    output_dir = args.out
-    util.make_dir(output_dir)
 
     # save loss graph
     x_val = [d[0] for d in losses]
