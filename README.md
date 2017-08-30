@@ -18,8 +18,8 @@ A simple colorization neural network.
 # Instrations
 3 steps to install easily.
 
-1. Install `python3.5`
-2. Install `chainer`.
+1. Install [python3.5](https://www.python.org/).
+2. Install [chainer](https://chainer.org/).
 3. Clone this repo.
 
 ```
@@ -32,34 +32,43 @@ $ cd Colorization
 Prepare some grayscale images and corresponging color images.  
 And resize imeges to 256 * 256.
 ```
-Colorization ---- train_256_gray ---- (grayscale images)
-                  train_256      ---- (color images)
-                  test_256_gray  ---- (grayscale images)
-                  model.py
-                  train.py
-                  test.py
-                  util.py
+Colorization ---- train ---- gray ---- (grayscale images)
+              |           +- origin -- (color images)
+              +-- test ----- gray ---- (grayscale images)
+              |           +- origin -- (color images)
+              +-- model.py
+              +-- train.py
+              +-- test.py
+              +-- util.py
 ```
 
 ## Train
 You may have to change some following paramaters in `train.py`.
-+ dataset directory path
-+ epoch num
-+ batch size
-+ etc..
+
+| option            | type | description                                            |
+| ----------------- | ---- | ------------------------------------------------------ |
+| --batchsize, -b   | int  | batch size. default is 50.                             |
+| --epoch, -e       | int  | epoch num. default is 1000.                            |
+| --train           | path | the directory path of train data. default is `./train`.|
+| --test            | path | the directory path of test data. default is `./test`.  |
+| --out, -o         | path | the directory path of output. default is `./output`.   |
+| --debug, -d       | -    | debug option. default is false.                        |
 
 ```
-$ python train.py
+$ python train.py [options]
 ``` 
 
 ## Test
 You may have to change some following paramaters in `test.py`.
-+ dataset directory path  
-+ trained model/optimizer file path
-+ etc..
+
+| option            | type | description                                                      |
+| ----------------- | ---- | ---------------------------------------------------------------- |
+| --data, -d        | path | the directory path of input data. default is `./test/gray`.      |
+| --out, -o         | path | the directory path of output. default is `./output`.             |
+| --model, -m       | path | the file path of learned NN model. default is `./example.model`. |
 
 ```
-$ python test.py
+$ python test.py [options]
 ```
 
 # License
