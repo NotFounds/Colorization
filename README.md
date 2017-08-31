@@ -7,20 +7,14 @@ A simple colorization neural network.
 + Using 8 convolution layers, and 8 deconvolution layers
 + No pooling layers
 + No fully connected layers
-
-# Example
-| Grayscale Image | Output Image | Original Image |
-| -------------- | --------------- | ------------ |
-|![example1_gray](./examples/example1_gray.jpg)|![example1_out](./examples/example1_out.png)|![example1_origin](./examples/example1_origin.jpg)|
-|![example2_gray](./examples/example2_gray.jpg)|![example2_out](./examples/example2_out.png)|![example2_origin](./examples/example2_origin.jpg)|
-|![example3_gray](./examples/example3_gray.jpg)|![example3_out](./examples/example3_out.png)|![example3_origin](./examples/example3_origin.jpg)|
++ Able to use `GPU`
 
 # Instrations
 3 steps to install easily.
 
-1. Install [python3.5](https://www.python.org/).
-2. Install [chainer](https://chainer.org/).
-3. Clone this repo.
+1. Install [Python3.5](https://www.python.org/).
+2. Install [Chainer](https://chainer.org/).
+3. Clone this [repo](https://github.com/NotFounds/Colorization).
 
 ```
 $ git clone https://github.com/NotFounds/Colorization.git
@@ -32,10 +26,9 @@ $ cd Colorization
 Prepare some grayscale images and corresponging color images.  
 And resize imeges to 256 * 256.
 ```
-Colorization ---- train ---- gray ---- (grayscale images)
-              |           +- origin -- (color images)
-              +-- test ----- gray ---- (grayscale images)
-              |           +- origin -- (color images)
+Colorization ---- train ---- (color images) --> train: 90%
+              |                             +-> test:  10% 
+              +-- test ----- (gray images)
               +-- model.py
               +-- train.py
               +-- test.py
@@ -44,32 +37,29 @@ Colorization ---- train ---- gray ---- (grayscale images)
 
 ## Train
 You may have to change some following paramaters in `train.py`.
-
-| option            | type | description                                            |
-| ----------------- | ---- | ------------------------------------------------------ |
-| --batchsize, -b   | int  | batch size. default is 50.                             |
-| --epoch, -e       | int  | epoch num. default is 1000.                            |
-| --train           | path | the directory path of train data. default is `./train`.|
-| --test            | path | the directory path of test data. default is `./test`.  |
-| --out, -o         | path | the directory path of output. default is `./output`.   |
-| --debug, -d       | -    | debug option. default is false.                        |
-
 ```
 $ python train.py [options]
 ``` 
+| option            | type  | description                                            |
+| ----------------- | ----- | ------------------------------------------------------ |
+| --batchsize, -b   | int   | batch size. default is 50.                             |
+| --epoch, -e       | int   | epoch num. default is 1000.                            |
+| --dataset, -d     | path  | the directory path of train data. default is `./train`.|
+| --out, -o         | path  | the directory path of output. default is `./output`.   |
+| --gpu, -g         | int   | gpu id. default is -1.(no gpu)                         |
+| --alpha           | float | learning rate fot Adam. default is 0.0002.             |
+| --beta1           | float | momentum term of Adam. default is 0.5.                 |
 
 ## Test
 You may have to change some following paramaters in `test.py`.
-
-| option            | type | description                                                      |
-| ----------------- | ---- | ---------------------------------------------------------------- |
-| --data, -d        | path | the directory path of input data. default is `./test/gray`.      |
-| --out, -o         | path | the directory path of output. default is `./output`.             |
-| --model, -m       | path | the file path of learned NN model. default is `./example.model`. |
-
 ```
 $ python test.py [options]
 ```
+| option            | type | description                                                      |
+| ----------------- | ---- | ---------------------------------------------------------------- |
+| --dataset, -d     | path | the directory path of input data. default is `./test`.           |
+| --out, -o         | path | the directory path of output. default is `./output`.             |
+| --model, -m       | path | the file path of learned NN model. default is `./example.model`. |
 
 # License
 MIT License

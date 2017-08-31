@@ -1,6 +1,7 @@
 import chainer
 import chainer.functions as F
 import chainer.links as L
+import numpy as np
 
 # Network definition
 class Colorization(chainer.Chain):
@@ -63,3 +64,20 @@ class Colorization(chainer.Chain):
         y7 = F.concat((self.dbn7(self.dconv7(F.relu(y6))), x1))
         y8 = F.tanh(self.dconv8(F.relu(y7)))
         return y8
+
+class Evalution(chainer.Chain):
+    
+    def __init__(self, predictor):
+        self.y = None
+        self.loss = None
+        self.accuracy = None
+        super(Evalution, self).__init__(predictor=predictor)
+    
+    def __call__(self, x, t=None):
+        self.y = self.predictor(x)
+        if t is None:
+            return self.y
+        self.loss = F.mean_absolute_error(self.y, t)
+        self.accuracy = F.r2_score(self.y, t)
+        chainer.report({'loss': self.loss, 'accuracy': self.accuracy}, self)
+        return self.loss

@@ -12,38 +12,40 @@ def output2img(y, flag=False):
     else:
         return np.asarray((np.transpose(y, (0, 2, 3, 1)) + 1) * 127.5, dtype=np.uint8)
 
-def read_train_data(input, output, dtype=int):
-    return chainer.datasets.TupleDataset(_read_gray_image(input, dtype), _read_rgb_image(output, dtype))
-
-def read_test_data(input, output=None, dtype=int):
-    if (output is None):
-        return chainer.datasets.TupleDataset(_read_gray_image(input, dtype))
-    else:
-        return chainer.datasets.TupleDataset(_read_gray_image(input, dtype), _read_rgb_image(output, dtype))
-
-def _read_rgb_image(dir, dtype):
+def make_dataset(dir, dtype=np.float32):
     paths = os.listdir(dir)
-    images = []
+    gray_img = []
+    rgb_img = []
     for path in paths:
-        img = Image.open(dir + path)
+        img = Image.open(dir + '/' + path)
         r, g, b, a = img.split()
-        r_data = np.asarray(np.float32(r)/127.5-1.0)
-        g_data = np.asarray(np.float32(g)/127.5-1.0)
-        b_data = np.asarray(np.float32(b)/127.5-1.0)
-        img_data = np.asarray([r_data, g_data, b_data])
-        images.append(img_data)
-    return images
+        r_img = np.asarray(dtype(r)/127.5-1)
+        g_img = np.asarray(dtype(g)/127.5-1)
+        b_img = np.asarray(dtype(b)/127.5-1)
+        rgb  = np.asarray([r_img, g_img, b_img])
+        rgb_img.append(rgb)
+        gray = np.asarray([((77 * dtype(r) + 150 * dtype(g) + 29 * dtype(b)) / 256) / 127.5 - 1])
+        gray_img.append(gray)
 
-def _read_gray_image(dir, dtype):
+    threshold = np.int32(len(paths)/10*9)
+    train = chainer.datasets.TupleDataset(gray_img[0:threshold], rgb_img[0:threshold])
+    test  = chainer.datasets.TupleDataset(gray_img[threshold:],  rgb_img[threshold:])
+    return train, test
+
+def make_testdata(dir, dtype=np.float32):
     paths = os.listdir(dir)
-    images = []
+    gray_img = []
     for path in paths:
-        img = Image.open(dir + path)
+        img = Image.open(dir + '/' + path)
         r, g, b, a = img.split()
-        data = np.asarray(np.float32(r)/127.5-1.0)
-        img_data = np.asarray([data])
-        images.append(img_data)
-    return images
+        r_img = np.asarray(dtype(r)/127.5-1)
+        g_img = np.asarray(dtype(g)/127.5-1)
+        b_img = np.asarray(dtype(b)/127.5-1)
+        gray = np.asarray([(dtype(r) + dtype(g) + dtype(b)) / 3 / 127.5 - 1])
+        gray_img.append(gray)
+
+    test = chainer.datasets.TupleDataset(gray_img,  np.asarray([None] * len(gray_img)))
+    return test
 
 def make_dir(dir):
     if not os.path.isdir(dir):
