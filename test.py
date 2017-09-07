@@ -15,10 +15,11 @@ def main():
     parser.add_argument('--model', '-m', default='./example.model')
     parser.add_argument('--out', '-o', default='./output', help='Directory to output the result')
     parser.add_argument('--gpu', '-g', type=int, default=-1, help='GPU ID (native value indicates CPU)')
+    parser.add_argument('--mapsize', type=int, default=2, help='Base size of convolution map')
     args = parser.parse_args()
 
     # Set up a neural network
-    model = M.Evalution(M.Colorization(2, 3))
+    model = M.Evalution(M.Colorization(args.mapsize, 3))
 
     # Setup for GPU
     xp = np
@@ -49,7 +50,7 @@ def main():
         if args.gpu >= 0:
             img = util.output2img(chainer.cuda.to_cpu(y.data))
         else:
-            img = util.output2img(y.data) 
+            img = util.output2img(y.data)
         Image.fromarray(img[0]).save('{output_dir}/{date}_img{j}.png'.format(**locals()))
 
 if __name__ == '__main__':
