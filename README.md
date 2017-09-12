@@ -43,7 +43,7 @@ $ python train.py [options]
 | option            | type  | description                                            |
 | ----------------- | ----- | ------------------------------------------------------ |
 | --batchsize, -b   | int   | batch size. default is 50.                             |
-| --epoch, -e       | int   | epoch num. default is 1000.                            |
+| --epoch, -e       | int   | epoch num. default is 400.                             |
 | --dataset, -d     | path  | the directory path of train data. default is `./train`.|
 | --out, -o         | path  | the directory path of output. default is `./output`.   |
 | --gpu, -g         | int   | gpu id. default is -1.(no gpu)                         |
@@ -60,12 +60,12 @@ You may have to change some following paramaters in `test.py`.
 ```
 $ python test.py [options]
 ```
-| option            | type | description                                                      |
-| ----------------- | ---- | ---------------------------------------------------------------- |
-| --dataset, -d     | path | the directory path of input data. default is `./test`.           |
-| --out, -o         | path | the directory path of output. default is `./output`.             |
-| --model, -m       | path | the file path of learned NN model. default is `./example.model`. |
-| --mapsize         | None  | base size of convolution map.                                   |
+| option            | type  | description                                                      |
+| ----------------- | ----- | ---------------------------------------------------------------- |
+| --dataset, -d     | path  | the directory path of input data. default is `./test`.           |
+| --out, -o         | path  | the directory path of output. default is `./output`.             |
+| --model, -m       | path  | the file path of learned NN model. default is `./example.model`. |
+| --mapsize         | None  | base size of convolution map.                                    |
 
 # License
 MIT License
