@@ -25,7 +25,7 @@ def main():
 
     parser = argparse.ArgumentParser(description='NN for Grayscale Image colorization')
     parser.add_argument('--batchsize', '-b', type=int, default=50, help='Number of images in each mini-batch')
-    parser.add_argument('--epoch', '-e', type=int, default=1000, help='Number of sweeps over the dataset to train')
+    parser.add_argument('--epoch', '-e', type=int, default=4000, help='Number of sweeps over the dataset to train')
     parser.add_argument('--dataset', '-d', default='./train', help='Directory of image files. Default is ./train')
     parser.add_argument('--out', '-o', default='./output', help='Directory to output the result')
     parser.add_argument('--gpu', '-g', type=int, default=-1, help='GPU ID (native value indicates CPU)')
@@ -49,16 +49,16 @@ def main():
     optimizer = make_optimizer(model, args.alpha, args.beta1, args.beta2)
 
     # Print parameters
-    if not args.no_print_log:
-        print('Epoch:     {args.epoch}'.format(**locals()))
-        print('BatchSize: {args.batchsize}'.format(**locals()))
-        print('Alpha:     {args.alpha}'.format(**locals()))
-        print('Beta1:     {args.beta1}'.format(**locals()))
+    print('Epoch:     {args.epoch}'.format(**locals()))
+    print('BatchSize: {args.batchsize}'.format(**locals()))
+    print('Alpha:     {args.alpha}'.format(**locals()))
+    print('Beta1:     {args.beta1}'.format(**locals()))
+    print('Beta2:     {args.beta2}'.format(**locals()))
+    print('Mapsize:   {args.mapsize}'.format(**locals()))
 
     output_dir = args.out
     util.make_dir(output_dir)
-    if not args.no_print_log:
-        print('Output:    {output_dir}'.format(**locals()))
+    print('Output:    {output_dir}'.format(**locals()))
 
     # Setup for GPU
     xp = np
@@ -66,11 +66,10 @@ def main():
         chainer.cuda.get_device_from_id(args.gpu).use()
         model.to_gpu()
         xp = chainer.cuda.cupy
-        if not args.no_print_log:
-            print('GPU:       {args.gpu}'.format(**locals()))
-    
+        print('GPU:       {args.gpu}'.format(**locals()))
+
     # Load the dataset
-    train, test = util.make_dataset(args.dataset, xp.float32)
+    train, test = util.make_dataset(args.dataset)
 
     # Setup iterater
     train_itr = chainer.iterators.SerialIterator(train, args.batchsize)
@@ -79,7 +78,7 @@ def main():
     # Setup trainer
     updater = training.StandardUpdater(train_itr, optimizer, device=args.gpu)
     trainer = training.Trainer(updater, (args.epoch, 'epoch'), out=output_dir)
-    trainer.extend(extensions.LogReport())
+    trainer.extend(extensions.LogReport(log_name='log.json'))
     trainer.extend(extensions.Evaluator(test_itr, model, device=args.gpu))
     trainer.extend(extensions.dump_graph(root_name='main/loss', out_name='cg.dot'))
     if not args.no_print_log:
@@ -92,9 +91,9 @@ def main():
     if extensions.PlotReport.available():
         trainer.extend(extensions.PlotReport(['main/loss', 'validation/main/loss'], 'epoch', file_name='loss.png', marker=None))
         trainer.extend(extensions.PlotReport(['main/accuracy', 'validation/main/accuracy'], 'epoch', file_name='accuracy.png', marker=None))
-    
+
     trainer.run()
-    
+
     # Save model/optimizer
     date = datetime.datetime.today().strftime("%Y-%m-%d %H%M%S")
     serializers.save_npz('{output_dir}/{date}.state'.format(**locals()), optimizer)
@@ -107,16 +106,15 @@ def main():
     # Image output
     if not args.no_out_image:
         data_n = len(test)
-        print(data_n)
-        output_itr = chainer.iterators.SerialIterator(test, 1, shuffle=False)
-        for j in range(data_n):
-            x = output_itr.next().__getitem__(0)[0]
-            y = model(xp.asarray([x]))
+        out_itr = chainer.iterators.SerialIterator(test, 1, repeat=False, shuffle=False)
+        for i in range(data_n):
+            x = out_itr.next().__getitem__(0)
+            y = model(xp.asarray(x))
             if args.gpu >= 0:
-                img = util.output2img(chainer.cuda.to_cpu(y.data))
+                img = util.output2img(chainer.cuda.to_cpu(y.data)[0])
             else:
-                img = util.output2img(y.data)
-            Image.fromarray(img[0]).save('{output_dir}/{date}_img{j}.png'.format(**locals()))
+                img = util.output2img(y.data[0])
+            img.save('{output_dir}/{date}_img{i}.png'.format(**locals()))
 
 if __name__ == '__main__':
     main()
