@@ -1,8 +1,6 @@
 # ignore
-test_256
-test_256_gray
-train_256
-train_256_gray
+test
+train
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
