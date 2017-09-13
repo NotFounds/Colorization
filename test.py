@@ -19,7 +19,7 @@ def main():
     args = parser.parse_args()
 
     # Set up a neural network
-    model = M.Evalution(M.Colorization(args.mapsize, 3))
+    model = M.Evalution(M.Colorization(args.mapsize, 2))
 
     # Setup for GPU
     xp = np
@@ -48,7 +48,7 @@ def main():
         x = test_itr.next().__getitem__(0)
         y = model(xp.asarray(x))
         if args.gpu >= 0:
-            img = util.output2img(chainer.cuda.to_cpu(y.data[0]))
+            img = util.output2img_hsv(x[0], chainer.cuda.to_cpu(y.data[0]))
         else:
             img = util.output2img(y.data[0])
         img.save('{output_dir}/{date}_img{i}.png'.format(**locals()))
