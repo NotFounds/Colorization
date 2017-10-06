@@ -16,7 +16,7 @@ class Colorization(chainer.Chain):
             conv5=L.Convolution2D(None, 8*map_n, 4, 2, 1),
             conv6=L.Convolution2D(None, 8*map_n, 4, 2, 1),
             conv7=L.Convolution2D(None, 16*map_n, 4, 2, 1),
-            conv8=L.Convolution2D(None, 16*map_n, 4, 1, 1),
+            conv8=L.Convolution2D(None, 16*map_n, 4, 2, 1),
 
             bn2=L.BatchNormalization(2*map_n),
             bn3=L.BatchNormalization(4*map_n),
