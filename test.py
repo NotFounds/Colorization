@@ -1,3 +1,4 @@
+import os
 import argparse
 import datetime
 import numpy as np
@@ -33,7 +34,7 @@ def main():
 
     # Load the dataset
     test_data = args.dataset + '/'
-    test = util.make_testdata(test_data, xp.float32)
+    test, filenames = util.make_testdata(test_data, xp.float32)
     test_itr = chainer.iterators.SerialIterator(test, 1, repeat=False, shuffle=False)
 
     # Make Directory
@@ -41,17 +42,17 @@ def main():
     util.make_dir(output_dir)
 
     # Output test image
-    date = datetime.datetime.today().strftime("%Y-%m-%d %H%M%S")
+    model_name = os.path.splitext(os.path.basename(args.model))[0]
 
     data_n = len(test)
-    for i in range(data_n):
-        x = test_itr.next().__getitem__(0)
-        y = model(xp.asarray(x))
+    for i, name in zip(range(data_n), filenames):
+        x = test_itr.next().__getitem__(0)[0]
+        y = model(xp.asarray([x]))
         if args.gpu >= 0:
             img = util.output2img(chainer.cuda.to_cpu(y.data[0]))
         else:
             img = util.output2img(y.data[0])
-        img.save('{output_dir}/{date}_img{i}.png'.format(**locals()))
+        img.save('{output_dir}/{model_name}_{name}.png'.format(**locals()))
 
 if __name__ == '__main__':
     main()

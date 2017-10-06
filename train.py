@@ -1,5 +1,6 @@
 import sys
 import copy
+import time
 import argparse
 import datetime
 import numpy as np
@@ -57,6 +58,8 @@ def main():
     print('Mapsize:   {args.mapsize}'.format(**locals()))
 
     output_dir = args.out
+    if args.out == './output':
+        output_dir = util.next_dir(args.out)
     util.make_dir(output_dir)
     print('Output:    {output_dir}'.format(**locals()))
 
@@ -69,7 +72,11 @@ def main():
         print('GPU:       {args.gpu}'.format(**locals()))
 
     # Load the dataset
+    print('Data Loading...')
+    start = time.time()
     train, test = util.make_dataset(args.dataset)
+    diff = time.time() - start
+    print('Finish Loading: {diff}s'.format(**locals()))
 
     # Setup iterater
     train_itr = chainer.iterators.SerialIterator(train, args.batchsize)
@@ -95,7 +102,7 @@ def main():
     trainer.run()
 
     # Save model/optimizer
-    date = datetime.datetime.today().strftime("%Y-%m-%d %H%M%S")
+    date = datetime.datetime.today().strftime("%m-%d_%H%M")
     serializers.save_npz('{output_dir}/{date}.state'.format(**locals()), optimizer)
     if args.gpu >= 0:
         serializers.save_npz('{output_dir}/{date}_gpu.model'.format(**locals()), model)
@@ -108,8 +115,8 @@ def main():
         data_n = len(test)
         out_itr = chainer.iterators.SerialIterator(test, 1, repeat=False, shuffle=False)
         for i in range(data_n):
-            x = out_itr.next().__getitem__(0)
-            y = model(xp.asarray(x))
+            x = out_itr.next().__getitem__(0)[0]
+            y = model(xp.asarray([x]))
             if args.gpu >= 0:
                 img = util.output2img(chainer.cuda.to_cpu(y.data)[0])
             else:
