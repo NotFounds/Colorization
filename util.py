@@ -2,7 +2,7 @@ import os
 import os.path
 import numpy as np
 import chainer
-from PIL import Image
+from PIL import Image, ImageFilter
 
 def output2img(y):
     return Image.fromarray(np.asarray((np.transpose(y, (1, 2, 0))) * 255, dtype=np.uint8))
@@ -29,13 +29,22 @@ def make_dataset(dir, dtype=np.float32):
         rgb_img.append(rgb)
         v = ((77 * dtype(r) + 150 * dtype(g) + 29 * dtype(b)) / 256) / 255.0
 
-        gray = np.asarray([v, v, v], dtype=dtype)
+        filter_img = laplacian(img)
+        f = filter_img.convert('L')
+        f.save('test_edge/' + path)
+        f_img = np.asarray(dtype(f)/255.0)
+
+        gray = np.asarray([v, v, v, f_img], dtype=dtype)
         gray_img.append(gray)
 
     threshold = np.int32(len(paths)/10*9)
     train = chainer.datasets.TupleDataset(gray_img[0:threshold], rgb_img[0:threshold])
     test  = chainer.datasets.TupleDataset(gray_img[threshold:],  rgb_img[threshold:])
     return train, test
+
+def laplacian(img):
+    flt = ImageFilter.Kernel((3, 3), [-1, -1, -1, -1, 8, -1, -1, -1, -1], scale=1)
+    return img.filter(flt)
 
 def make_testdata(dir, dtype=np.float32):
     paths = os.listdir(dir)
@@ -49,7 +58,12 @@ def make_testdata(dir, dtype=np.float32):
         b_img = np.asarray(dtype(b)/255.0)
         v = ((77 * dtype(r) + 150 * dtype(g) + 29 * dtype(b)) / 256) / 255.0
 
-        gray = np.asarray([v, v, v])
+        filter_img = laplacian(img)
+        f = filter_img.convert('L')
+        f.save('test_edge/' + path)
+        f_img = np.asarray(dtype(f)/255.0)
+
+        gray = np.asarray([v, v, v, f_img])
         gray_img.append(gray)
 
         filename = os.path.splitext(os.path.basename(path))[0]
