@@ -79,6 +79,6 @@ class Evalution(chainer.Chain):
         if t is None:
             return self.y
         self.loss = F.mean_squared_error(self.y, t)
-        self.accuracy = F.r2_score(self.y, t)
+        self.accuracy = 1 - F.mean_squared_error(self.y, t)
         chainer.report({'loss': self.loss, 'accuracy': self.accuracy}, self)
         return self.loss

@@ -35,7 +35,6 @@ def main():
     # Load the dataset
     test_data = args.dataset + '/'
     test, filenames = util.make_testdata(test_data, xp.float32)
-    test_itr = chainer.iterators.SerialIterator(test, 1, repeat=False, shuffle=False)
 
     # Make Directory
     output_dir = args.out
@@ -44,10 +43,8 @@ def main():
     # Output test image
     model_name = os.path.splitext(os.path.basename(args.model))[0]
 
-    data_n = len(test)
-    for i, name in zip(range(data_n), filenames):
-        x = test_itr.next().__getitem__(0)[0]
-        y = model(xp.asarray([x]))
+    for x, name in zip(test, filenames):
+        y = model.predictor(xp.asarray([x]))
         if args.gpu >= 0:
             img = util.output2img(chainer.cuda.to_cpu(y.data[0]))
         else:
