@@ -50,18 +50,18 @@ def main():
     optimizer = make_optimizer(model, args.alpha, args.beta1, args.beta2)
 
     # Print parameters
-    print('Epoch:     {args.epoch}'.format(**locals()))
-    print('BatchSize: {args.batchsize}'.format(**locals()))
-    print('Alpha:     {args.alpha}'.format(**locals()))
-    print('Beta1:     {args.beta1}'.format(**locals()))
-    print('Beta2:     {args.beta2}'.format(**locals()))
-    print('Mapsize:   {args.mapsize}'.format(**locals()))
+    print('# Epoch:     {args.epoch}'.format(**locals()))
+    print('# BatchSize: {args.batchsize}'.format(**locals()))
+    print('# Alpha:     {args.alpha}'.format(**locals()))
+    print('# Beta1:     {args.beta1}'.format(**locals()))
+    print('# Beta2:     {args.beta2}'.format(**locals()))
+    print('# Mapsize:   {args.mapsize}'.format(**locals()))
 
     output_dir = args.out
     if args.out == './output':
         output_dir = util.next_dir(args.out)
     util.make_dir(output_dir)
-    print('Output:    {output_dir}'.format(**locals()))
+    print('# Output:    {output_dir}'.format(**locals()))
 
     # Setup for GPU
     xp = np
@@ -69,7 +69,7 @@ def main():
         chainer.cuda.get_device_from_id(args.gpu).use()
         model.to_gpu()
         xp = chainer.cuda.cupy
-        print('GPU:       {args.gpu}'.format(**locals()))
+        print('# GPU:       {args.gpu}'.format(**locals()))
 
     # Load the dataset
     print('Data Loading...')
@@ -93,8 +93,8 @@ def main():
         trainer.extend(extensions.ProgressBar())
     if args.snapshot:
         trainer.extend(extensions.snapshot())
-        trainer.extend(extensions.snapshot_object(model, 'model_snapshot_{.updater.epoch}'))
-        trainer.extend(extensions.snapshot_object(optimizer, 'optimizer_snapshot_{.updater.epoch}'))
+        trainer.extend(extensions.snapshot_object(model, 'model_snapshot_{.updater.epoch}.model'))
+        trainer.extend(extensions.snapshot_object(optimizer, 'optimizer_snapshot_{.updater.epoch}.state'))
     if extensions.PlotReport.available():
         trainer.extend(extensions.PlotReport(['main/loss', 'validation/main/loss'], 'epoch', file_name='loss.png', marker=None))
         trainer.extend(extensions.PlotReport(['main/accuracy', 'validation/main/accuracy'], 'epoch', file_name='accuracy.png', marker=None))
