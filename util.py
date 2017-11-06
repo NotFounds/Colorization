@@ -2,61 +2,65 @@ import os
 import os.path
 import numpy as np
 import chainer
+from chainer import datasets
 from PIL import Image
 
 def output2img(y):
     return Image.fromarray(np.asarray((np.transpose(y, (1, 2, 0))) * 255, dtype=np.uint8))
 
-def output2img_hsv(x, y):
-    hsv = np.asarray([y[0][0], y[0][1], x[0]])
-    return Image.fromarray(np.asarray((np.transpose(hsv, (1, 2, 0)) + 1) * 127.5, dtype=np.uint8)).convert('RGB')
-
-def rgb2hsv(img, dtype=np.float32):
-    hsv = np.asarray(img.convert('HSV'), dtype)
-    return np.transpose(hsv, (2, 0, 1))/127.5-1
-
 def make_dataset(dir, dtype=np.float32):
     paths = os.listdir(dir)
-    gray_img = []
-    rgb_img = []
+    input_imgs = []
+    truth_imgs = []
     for path in paths:
-        img = Image.open(dir + '/' + path).convert('RGBA')
-        r, g, b, a = img.split()
-        r_img = np.asarray(dtype(r)/255.0)
-        g_img = np.asarray(dtype(g)/255.0)
-        b_img = np.asarray(dtype(b)/255.0)
-        rgb  = np.asarray([r_img, g_img, b_img], dtype=dtype)
-        rgb_img.append(rgb)
-        v = ((77 * dtype(r) + 150 * dtype(g) + 29 * dtype(b)) / 256) / 255.0
+        # Open image
+        img = Image.open(dir + '/' + path)
 
-        gray = np.asarray([v, v, v], dtype=dtype)
-        gray_img.append(gray)
+        # Truth(Color) image
+        r, g, b, a = img.convert('RGBA').split()
+        r_img = np.asarray(dtype(r) / 255.0)
+        g_img = np.asarray(dtype(g) / 255.0)
+        b_img = np.asarray(dtype(b) / 255.0)
+        truth_img = np.asarray([r_img, g_img, b_img], dtype=dtype)
+        truth_imgs.append(truth_img)
 
-    threshold = np.int32(len(paths)/10*9)
-    train = chainer.datasets.TupleDataset(gray_img[0:threshold], rgb_img[0:threshold])
-    test  = chainer.datasets.TupleDataset(gray_img[threshold:],  rgb_img[threshold:])
-    return train, test
+        # Gray image
+        l = np.asarray(dtype(img.convert('L')) / 255.0)
+
+        # Create input data
+        input_imgs.append(np.asarray([l, l, l], dtype=dtype))
+
+    return datasets.TupleDataset(input_imgs, truth_imgs)
 
 def make_testdata(dir, dtype=np.float32):
-    paths = os.listdir(dir)
     names = []
-    gray_img = []
-    for path in paths:
-        img = Image.open(dir + '/' + path)
-        r, g, b, a = img.split()
-        r_img = np.asarray(dtype(r)/255.0)
-        g_img = np.asarray(dtype(g)/255.0)
-        b_img = np.asarray(dtype(b)/255.0)
-        v = ((77 * dtype(r) + 150 * dtype(g) + 29 * dtype(b)) / 256) / 255.0
+    input_imgs = []
+    if os.path.isdir(dir):
+        paths = os.listdir(dir)
+        for path in paths:
+            # Open image
+            img = Image.open(dir + '/' + path)
 
-        gray = np.asarray([v, v, v])
-        gray_img.append(gray)
+            # Gray image
+            l = np.asarray(dtype(img.convert('L')) / 255.0)
 
-        filename = os.path.splitext(os.path.basename(path))[0]
+            # Create input data
+            input_imgs.append(np.asarray([l, l, l], dtype=dtype))
+            filename = os.path.splitext(os.path.basename(path))[0]
+            names.append(filename)
+    else:
+        # Open image
+        img = Image.open(dir[:-1])
+
+        # Gray image
+        l = np.asarray(dtype(img.convert('L')) / 255.0)
+
+        # Create input data
+        input_imgs.append(np.asarray([l, l, l], dtype=dtype))
+        filename = os.path.splitext(os.path.basename(dir))[0]
         names.append(filename)
 
-    test = chainer.datasets.TupleDataset(gray_img, gray_img)
-    return test, names
+    return input_imgs, names
 
 def next_dir(dir):
     i = 1

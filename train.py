@@ -13,8 +13,9 @@ except ImportError:
 
 import chainer
 import chainer.functions as F
-from chainer import serializers
+from chainer import datasets
 from chainer import training
+from chainer import serializers
 from chainer.training import extensions
 from PIL import Image
 import matplotlib.pyplot as plt
@@ -56,7 +57,9 @@ def main():
     print('# Beta1:     {args.beta1}'.format(**locals()))
     print('# Beta2:     {args.beta2}'.format(**locals()))
     print('# Mapsize:   {args.mapsize}'.format(**locals()))
+    print('# Dataset:   {args.dataset}'.format(**locals()))
 
+    # Create Output directory
     output_dir = args.out
     if args.out == './output':
         output_dir = util.next_dir(args.out)
@@ -74,7 +77,8 @@ def main():
     # Load the dataset
     print('Data Loading...')
     start = time.time()
-    train, test = util.make_dataset(args.dataset)
+    d = util.make_dataset(args.dataset)
+    train, test = datasets.split_dataset_random(d, int(len(d) * 0.9))
     diff = time.time() - start
     print('Finish Loading: {diff}s'.format(**locals()))
 
@@ -109,15 +113,16 @@ def main():
         serializers.save_npz('{output_dir}/{date}_cpu.model'.format(**locals()), copy.deepcopy(model).to_cpu())
     else:
         serializers.save_npz('{output_dir}/{date}_cpu.model'.format(**locals()), model)
+    print('model/optimizer Saved: {output_dir}/{date}.*'.format(**locals()))
 
-    # Image output
+    # Predict test images and Save output images
     if not args.no_out_image:
         chainer.using_config('train', False)
         data_n = len(test)
         out_itr = chainer.iterators.SerialIterator(test, 1, repeat=False, shuffle=False)
         for i in range(data_n):
             x = out_itr.next().__getitem__(0)[0]
-            y = model(xp.asarray([x]))
+            y = model.predictor(xp.asarray([x]))
             if args.gpu >= 0:
                 img = util.output2img(chainer.cuda.to_cpu(y.data)[0])
             else:
