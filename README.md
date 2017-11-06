@@ -3,11 +3,25 @@ A simple colorization neural network.
 
 # Feature
 + Using `Chainer`
-+ Using CNN(Convolutional Neural Network)
++ Using FCNN(Fully Convolutional Neural Network)
 + Using 8 convolution layers, and 8 deconvolution layers
 + No pooling layers
 + No fully connected layers
 + Able to use `GPU`
+
+# Example
+
+```
+$ python test.py --model example.model --dataset ./examples/gray --mapsize 8
+```
+
+|Grayscale image|Output image|
+|---------------|------------|
+|![example1_gray](./examples/gray/1.jpg)|![example1_out](./examples/output/1.png)|
+|![example2_gray](./examples/gray/2.jpg)|![example2_out](./examples/output/2.png)|
+|![example3_gray](./examples/gray/3.jpg)|![example3_out](./examples/output/3.png)|
+|![example4_gray](./examples/gray/4.jpg)|![example4_out](./examples/output/4.png)|
+|![example5_gray](./examples/gray/5.jpg)|![example5_out](./examples/output/5.png)|
 
 # Instrations
 3 steps to install easily.
@@ -62,7 +76,7 @@ $ python test.py [options]
 ```
 | option            | type  | description                                                      |
 | ----------------- | ----- | ---------------------------------------------------------------- |
-| --dataset, -d     | path  | the directory path of input data. default is `./test`.           |
+| --dataset, -d     | path  | the directory path of input data. default is `./test`. if given a file path, colorize the image. |
 | --out, -o         | path  | the directory path of output. default is `./output`.             |
 | --model, -m       | path  | the file path of learned NN model. default is `./example.model`. |
 | --mapsize         | None  | base size of convolution map.                                    |
