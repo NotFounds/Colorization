@@ -89,7 +89,7 @@ def main():
     trainer.extend(extensions.Evaluator(test_itr, model, device=args.gpu))
     trainer.extend(extensions.dump_graph(root_name='main/loss', out_name='cg.dot'))
     if not args.no_print_log:
-        trainer.extend(extensions.PrintReport( ['epoch', 'main/loss', 'validation/main/loss', 'main/accuracy', 'validation/main/accuracy']))
+        trainer.extend(extensions.PrintReport(['epoch', 'main/loss', 'validation/main/loss', 'main/accuracy', 'validation/main/accuracy', 'elapsed_time']))
         trainer.extend(extensions.ProgressBar())
     if args.snapshot:
         trainer.extend(extensions.snapshot())
@@ -112,6 +112,7 @@ def main():
 
     # Image output
     if not args.no_out_image:
+        chainer.using_config('train', False)
         data_n = len(test)
         out_itr = chainer.iterators.SerialIterator(test, 1, repeat=False, shuffle=False)
         for i in range(data_n):

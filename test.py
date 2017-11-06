@@ -44,6 +44,7 @@ def main():
     # Output test image
     model_name = os.path.splitext(os.path.basename(args.model))[0]
 
+    chainer.using_config('train', False)
     data_n = len(test)
     for i, name in zip(range(data_n), filenames):
         x = test_itr.next().__getitem__(0)[0]
