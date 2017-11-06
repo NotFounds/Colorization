@@ -1,3 +1,4 @@
+import os
 import argparse
 import datetime
 import numpy as np
@@ -8,17 +9,18 @@ import model as M
 import util
 
 def main():
-    print(chainer.__version__)
+    print("Chainer Version: " + chainer.__version__)
 
     parser = argparse.ArgumentParser(description='Colorization')
     parser.add_argument('--dataset', '-d', default='./test')
     parser.add_argument('--model', '-m', default='./example.model')
     parser.add_argument('--out', '-o', default='./output', help='Directory to output the result')
     parser.add_argument('--gpu', '-g', type=int, default=-1, help='GPU ID (native value indicates CPU)')
+    parser.add_argument('--mapsize', type=int, default=2, help='Base size of convolution map')
     args = parser.parse_args()
 
     # Set up a neural network
-    model = M.Evalution(M.Colorization(2, 3))
+    model = M.Evalution(M.Colorization(args.mapsize, 3))
 
     # Setup for GPU
     xp = np
@@ -26,31 +28,29 @@ def main():
         chainer.cuda.get_device_from_id(args.gpu).use()
         model.to_gpu()
         xp = chainer.cuda.cupy
-        print('GPU:       {args.gpu}'.format(**locals()))
 
     # Load model
     serializers.load_npz(args.model, model)
 
     # Load the dataset
     test_data = args.dataset + '/'
-    test = util.make_testdata(test_data, xp.float32)
-    test_itr = chainer.iterators.SerialIterator(test, 1, repeat=False, shuffle=False)
+    test, filenames = util.make_testdata(test_data, xp.float32)
 
-    # Output test image
-    date = datetime.datetime.today().strftime("%Y-%m-%d %H%M%S")
-
+    # Make Directory
     output_dir = args.out
     util.make_dir(output_dir)
 
-    data_n = len(test)
-    for j in range(data_n):
-        x = test_itr.next().__getitem__(0)[0]
-        y = model(xp.asarray([x]))
+    # Output test image
+    model_name = os.path.splitext(os.path.basename(args.model))[0]
+
+    chainer.using_config('train', False)
+    for x, name in zip(test, filenames):
+        y = model.predictor(xp.asarray([x]))
         if args.gpu >= 0:
-            img = util.output2img(chainer.cuda.to_cpu(y.data))
+            img = util.output2img(chainer.cuda.to_cpu(y.data[0]))
         else:
-            img = util.output2img(y.data) 
-        Image.fromarray(img[0]).save('{output_dir}/{date}_img{j}.png'.format(**locals()))
+            img = util.output2img(y.data[0])
+        img.save('{output_dir}/{model_name}_{name}.png'.format(**locals()))
 
 if __name__ == '__main__':
     main()

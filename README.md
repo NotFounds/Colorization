@@ -3,11 +3,25 @@ A simple colorization neural network.
 
 # Feature
 + Using `Chainer`
-+ Using CNN(Convolutional Neural Network)
++ Using FCNN(Fully Convolutional Neural Network)
 + Using 8 convolution layers, and 8 deconvolution layers
 + No pooling layers
 + No fully connected layers
 + Able to use `GPU`
+
+# Example
+
+```
+$ python test.py --model example.model --dataset ./examples/gray --mapsize 8
+```
+
+|Grayscale image|Output image|
+|---------------|------------|
+|![example1_gray](./examples/gray/1.jpg)|![example1_out](./examples/output/1.png)|
+|![example2_gray](./examples/gray/2.jpg)|![example2_out](./examples/output/2.png)|
+|![example3_gray](./examples/gray/3.jpg)|![example3_out](./examples/output/3.png)|
+|![example4_gray](./examples/gray/4.jpg)|![example4_out](./examples/output/4.png)|
+|![example5_gray](./examples/gray/5.jpg)|![example5_out](./examples/output/5.png)|
 
 # Instrations
 3 steps to install easily.
@@ -39,27 +53,33 @@ Colorization ---- train ---- (color images) --> train: 90%
 You may have to change some following paramaters in `train.py`.
 ```
 $ python train.py [options]
-``` 
+```
 | option            | type  | description                                            |
 | ----------------- | ----- | ------------------------------------------------------ |
 | --batchsize, -b   | int   | batch size. default is 50.                             |
-| --epoch, -e       | int   | epoch num. default is 1000.                            |
+| --epoch, -e       | int   | epoch num. default is 400.                             |
 | --dataset, -d     | path  | the directory path of train data. default is `./train`.|
 | --out, -o         | path  | the directory path of output. default is `./output`.   |
 | --gpu, -g         | int   | gpu id. default is -1.(no gpu)                         |
-| --alpha           | float | learning rate fot Adam. default is 0.0002.             |
-| --beta1           | float | momentum term of Adam. default is 0.5.                 |
+| --alpha           | float | learning rate fot Adam. default is 0.001.              |
+| --beta1           | float | momentum term of Adam. default is 0.9.                 |
+| --beta2           | float | momentum term of Adam. default is 0.999.               |
+| --mapsize         | int   | base size of convolution map.                          |
+| --snapshot        | None  | take snapshot of the trainer/model/optimizer.          |
+| --no_out_image    | None  | don't output images.                                   |
+| --no_print_log    | None  | don't print log.                                       |
 
 ## Test
 You may have to change some following paramaters in `test.py`.
 ```
 $ python test.py [options]
 ```
-| option            | type | description                                                      |
-| ----------------- | ---- | ---------------------------------------------------------------- |
-| --dataset, -d     | path | the directory path of input data. default is `./test`.           |
-| --out, -o         | path | the directory path of output. default is `./output`.             |
-| --model, -m       | path | the file path of learned NN model. default is `./example.model`. |
+| option            | type  | description                                                      |
+| ----------------- | ----- | ---------------------------------------------------------------- |
+| --dataset, -d     | path  | the directory path of input data. default is `./test`. if given a file path, colorize the image. |
+| --out, -o         | path  | the directory path of output. default is `./output`.             |
+| --model, -m       | path  | the file path of learned NN model. default is `./example.model`. |
+| --mapsize         | None  | base size of convolution map.                                    |
 
 # License
 MIT License

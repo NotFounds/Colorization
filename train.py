@@ -1,5 +1,6 @@
 import sys
 import copy
+import time
 import argparse
 import datetime
 import numpy as np
@@ -12,8 +13,9 @@ except ImportError:
 
 import chainer
 import chainer.functions as F
-from chainer import serializers
+from chainer import datasets
 from chainer import training
+from chainer import serializers
 from chainer.training import extensions
 from PIL import Image
 import matplotlib.pyplot as plt
@@ -25,33 +27,44 @@ def main():
 
     parser = argparse.ArgumentParser(description='NN for Grayscale Image colorization')
     parser.add_argument('--batchsize', '-b', type=int, default=50, help='Number of images in each mini-batch')
-    parser.add_argument('--epoch', '-e', type=int, default=1000, help='Number of sweeps over the dataset to train')
+    parser.add_argument('--epoch', '-e', type=int, default=400, help='Number of sweeps over the dataset to train')
     parser.add_argument('--dataset', '-d', default='./train', help='Directory of image files. Default is ./train')
     parser.add_argument('--out', '-o', default='./output', help='Directory to output the result')
     parser.add_argument('--gpu', '-g', type=int, default=-1, help='GPU ID (native value indicates CPU)')
-    parser.add_argument('--alpha', type=float, default=0.0002, help='Learing rate for Adam')
-    parser.add_argument('--beta1', type=float, default=0.5, help='Momentum term of Adam')
+    parser.add_argument('--alpha', type=float, default=0.001, help='Learing rate for Adam')
+    parser.add_argument('--beta1', type=float, default=0.9, help='Momentum term of Adam')
+    parser.add_argument('--beta2', type=float, default=0.999, help='Momentum term of Adam')
+    parser.add_argument('--mapsize', type=int, default=2, help='Base size of convolution map')
+    parser.add_argument('--snapshot', action='store_const', const=True, default=False, help='Take snapshot of the trainer/model/optimizer')
+    parser.add_argument('--no_out_image', action='store_const', const=True, default=False)
+    parser.add_argument('--no_print_log', action='store_const', const=True, default=False)
     args = parser.parse_args()
 
     # Set up a neural network to train
-    model = M.Evalution(M.Colorization(2, 3))
+    model = M.Evalution(M.Colorization(args.mapsize, 3))
 
     # Setup an optimizer
-    def make_optimizer(model, alpha=0.0002, beta1=0.5):
-        optimizer = chainer.optimizers.Adam(alpha=alpha, beta1=beta1)
+    def make_optimizer(model, alpha=0.001, beta1=0.9, beta2=0.999):
+        optimizer = chainer.optimizers.Adam(alpha=alpha, beta1=beta1, beta2=beta2)
         optimizer.setup(model)
         return optimizer
-    optimizer = make_optimizer(model, args.alpha, args.beta1)
+    optimizer = make_optimizer(model, args.alpha, args.beta1, args.beta2)
 
     # Print parameters
-    print('Epoch:     {args.epoch}'.format(**locals()))
-    print('BatchSize: {args.batchsize}'.format(**locals()))
-    print('Alpha:     {args.alpha}'.format(**locals()))
-    print('Beta1:     {args.beta1}'.format(**locals()))
+    print('# Epoch:     {args.epoch}'.format(**locals()))
+    print('# BatchSize: {args.batchsize}'.format(**locals()))
+    print('# Alpha:     {args.alpha}'.format(**locals()))
+    print('# Beta1:     {args.beta1}'.format(**locals()))
+    print('# Beta2:     {args.beta2}'.format(**locals()))
+    print('# Mapsize:   {args.mapsize}'.format(**locals()))
+    print('# Dataset:   {args.dataset}'.format(**locals()))
 
+    # Create Output directory
     output_dir = args.out
+    if args.out == './output':
+        output_dir = util.next_dir(args.out)
     util.make_dir(output_dir)
-    print('Output:    {output_dir}'.format(**locals()))
+    print('# Output:    {output_dir}'.format(**locals()))
 
     # Setup for GPU
     xp = np
@@ -59,10 +72,15 @@ def main():
         chainer.cuda.get_device_from_id(args.gpu).use()
         model.to_gpu()
         xp = chainer.cuda.cupy
-        print('GPU:       {args.gpu}'.format(**locals()))
-    
+        print('# GPU:       {args.gpu}'.format(**locals()))
+
     # Load the dataset
-    train, test = util.make_dataset(args.dataset, xp.float32) 
+    print('Data Loading...')
+    start = time.time()
+    d = util.make_dataset(args.dataset)
+    train, test = datasets.split_dataset_random(d, int(len(d) * 0.9))
+    diff = time.time() - start
+    print('Finish Loading: {diff}s'.format(**locals()))
 
     # Setup iterater
     train_itr = chainer.iterators.SerialIterator(train, args.batchsize)
@@ -71,26 +89,45 @@ def main():
     # Setup trainer
     updater = training.StandardUpdater(train_itr, optimizer, device=args.gpu)
     trainer = training.Trainer(updater, (args.epoch, 'epoch'), out=output_dir)
-
+    trainer.extend(extensions.LogReport(log_name='log.json'))
     trainer.extend(extensions.Evaluator(test_itr, model, device=args.gpu))
-    trainer.extend(extensions.LogReport())
-    trainer.extend(extensions.PrintReport( ['epoch', 'main/loss', 'validation/main/loss', 'main/accuracy', 'validation/main/accuracy']))
-    trainer.extend(extensions.ProgressBar())
     trainer.extend(extensions.dump_graph(root_name='main/loss', out_name='cg.dot'))
+    if not args.no_print_log:
+        trainer.extend(extensions.PrintReport(['epoch', 'main/loss', 'validation/main/loss', 'main/accuracy', 'validation/main/accuracy', 'elapsed_time']))
+        trainer.extend(extensions.ProgressBar())
+    if args.snapshot:
+        trainer.extend(extensions.snapshot())
+        trainer.extend(extensions.snapshot_object(model, 'model_snapshot.model'))
+        trainer.extend(extensions.snapshot_object(optimizer, 'optimizer_snapshot.state'))
     if extensions.PlotReport.available():
         trainer.extend(extensions.PlotReport(['main/loss', 'validation/main/loss'], 'epoch', file_name='loss.png', marker=None))
         trainer.extend(extensions.PlotReport(['main/accuracy', 'validation/main/accuracy'], 'epoch', file_name='accuracy.png', marker=None))
-    
+
     trainer.run()
-    
-    # save model/optimizer
-    date = datetime.datetime.today().strftime("%Y-%m-%d %H%M%S")
+
+    # Save model/optimizer
+    date = datetime.datetime.today().strftime("%m-%d_%H%M")
     serializers.save_npz('{output_dir}/{date}.state'.format(**locals()), optimizer)
     if args.gpu >= 0:
         serializers.save_npz('{output_dir}/{date}_gpu.model'.format(**locals()), model)
         serializers.save_npz('{output_dir}/{date}_cpu.model'.format(**locals()), copy.deepcopy(model).to_cpu())
     else:
         serializers.save_npz('{output_dir}/{date}_cpu.model'.format(**locals()), model)
+    print('model/optimizer Saved: {output_dir}/{date}.*'.format(**locals()))
+
+    # Predict test images and Save output images
+    if not args.no_out_image:
+        chainer.using_config('train', False)
+        data_n = len(test)
+        out_itr = chainer.iterators.SerialIterator(test, 1, repeat=False, shuffle=False)
+        for i in range(data_n):
+            x = out_itr.next().__getitem__(0)[0]
+            y = model.predictor(xp.asarray([x]))
+            if args.gpu >= 0:
+                img = util.output2img(chainer.cuda.to_cpu(y.data)[0])
+            else:
+                img = util.output2img(y.data[0])
+            img.save('{output_dir}/{date}_img{i}.png'.format(**locals()))
 
 if __name__ == '__main__':
     main()
