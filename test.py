@@ -3,6 +3,7 @@ import argparse
 import datetime
 import numpy as np
 import chainer
+import chainer.links as L
 from chainer import serializers
 from PIL import Image
 import model as M
@@ -13,24 +14,28 @@ def main():
 
     parser = argparse.ArgumentParser(description='Colorization')
     parser.add_argument('--dataset', '-d', default='./test')
-    parser.add_argument('--model', '-m', default='./example.model')
+    parser.add_argument('--model_class', default='./example_class.model')
+    parser.add_argument('--model_color', default='./example_color.model')
     parser.add_argument('--out', '-o', default='./output', help='Directory to output the result')
     parser.add_argument('--gpu', '-g', type=int, default=-1, help='GPU ID (native value indicates CPU)')
-    parser.add_argument('--mapsize', type=int, default=2, help='Base size of convolution map')
+    parser.add_argument('--mapsize', type=int, default=8, help='Base size of convolution map')
     args = parser.parse_args()
 
     # Set up a neural network
-    model = M.Evalution(M.Colorization(args.mapsize, 3))
+    model_class = L.Classifier(M.Classification(args.mapsize, 3))
+    model_color = M.Evalution(M.Colorization(args.mapsize, 3))
 
     # Setup for GPU
     xp = np
     if args.gpu >= 0:
         chainer.cuda.get_device_from_id(args.gpu).use()
-        model.to_gpu()
+        model_class.to_gpu()
+        model_color.to_gpu()
         xp = chainer.cuda.cupy
 
     # Load model
-    serializers.load_npz(args.model, model)
+    serializers.load_npz(args.model_class, model_class)
+    serializers.load_npz(args.model_color, model_color)
 
     # Load the dataset
     test_data = args.dataset + '/'
@@ -39,18 +44,23 @@ def main():
     # Make Directory
     output_dir = args.out
     util.make_dir(output_dir)
+    print('# Output:    {output_dir}'.format(**locals()))
 
     # Output test image
-    model_name = os.path.splitext(os.path.basename(args.model))[0]
+    model_name = os.path.splitext(os.path.basename(args.model_color))[0]
 
     chainer.using_config('train', False)
     for x, name in zip(test, filenames):
-        y = model.predictor(xp.asarray([x]))
+        y1 = chainer.functions.softmax(model_class.predictor(xp.asarray([x])))
+        y2 = model_color.predictor(xp.asarray([x]))
         if args.gpu >= 0:
-            img = util.output2img(chainer.cuda.to_cpu(y.data[0]))
+            img = util.output2img(chainer.cuda.to_cpu(y2.data[0]))
         else:
-            img = util.output2img(y.data[0])
+            img = util.output2img(y2.data[0])
         img.save('{output_dir}/{model_name}_{name}.png'.format(**locals()))
+        l = np.argmax(y1.data)
+        m = round(float(np.max(y1.data) * 100), 4)
+        print('label: {l}  {m}% \t{name}.png'.format(**locals()))
 
 if __name__ == '__main__':
     main()
