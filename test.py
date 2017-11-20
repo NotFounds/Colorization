@@ -14,8 +14,8 @@ def main():
 
     parser = argparse.ArgumentParser(description='Colorization')
     parser.add_argument('--dataset', '-d', default='./test')
-    parser.add_argument('--model_class', default='./example_class.model')
-    parser.add_argument('--model_color', default='./example_color.model')
+    parser.add_argument('--model_class', default='./class.model')
+    parser.add_argument('--model_color', default='./color.model')
     parser.add_argument('--out', '-o', default='./output', help='Directory to output the result')
     parser.add_argument('--gpu', '-g', type=int, default=-1, help='GPU ID (native value indicates CPU)')
     parser.add_argument('--mapsize', type=int, default=8, help='Base size of convolution map')
@@ -47,8 +47,6 @@ def main():
     print('# Output:    {output_dir}'.format(**locals()))
 
     # Output test image
-    model_name = os.path.splitext(os.path.basename(args.model_color))[0]
-
     chainer.using_config('train', False)
     for x, name in zip(test, filenames):
         y1 = chainer.functions.softmax(model_class.predictor(xp.asarray([x])))
@@ -57,7 +55,7 @@ def main():
             img = util.output2img(chainer.cuda.to_cpu(y2.data[0]))
         else:
             img = util.output2img(y2.data[0])
-        img.save('{output_dir}/{model_name}_{name}.png'.format(**locals()))
+        img.save('{output_dir}/{name}.png'.format(**locals()))
         l = np.argmax(y1.data)
         m = round(float(np.max(y1.data) * 100), 4)
         print('label: {l}  {m}% \t{name}.png'.format(**locals()))

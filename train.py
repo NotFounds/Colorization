@@ -42,6 +42,29 @@ class DelGrad(object):
                     with cuda.get_device(grad):
                         grad = 0
 
+def make_optimizer(model, optimizer=chainer.optimizers.Adam()):
+    optimizer.setup(model)
+    return optimizer
+
+def setup_trainer(model, optimizer, train, test, epoch, out, name, gpu=-1, no_print_log=False, snapshot=False):
+    updater = training.StandardUpdater(train, optimizer, device=gpu)
+    trainer = training.Trainer(updater, (epoch, 'epoch'), out=out)
+    trainer.extend(extensions.LogReport(log_name='log_{name}.json'.format(**locals())))
+    trainer.extend(extensions.Evaluator(test, model, device=gpu))
+    trainer.extend(extensions.dump_graph(root_name='main/loss', out_name='cg_{name}.dot'.format(**locals())))
+
+    if not no_print_log:
+        trainer.extend(extensions.PrintReport(['epoch', 'main/loss', 'validation/main/loss', 'main/accuracy', 'validation/main/accuracy', 'elapsed_time']))
+        trainer.extend(extensions.ProgressBar())
+    if snapshot:
+        trainer.extend(extensions.snapshot())
+        trainer.extend(extensions.snapshot_object(model, '{name}_snapshot.model'.format(**locals())))
+        trainer.extend(extensions.snapshot_object(optimizer, '{name}_snapshot.state'.format(**locals())))
+    if extensions.PlotReport.available():
+        trainer.extend(extensions.PlotReport(['main/loss', 'validation/main/loss'], 'epoch', file_name='loss_{name}.png'.format(**locals()), marker=None))
+        trainer.extend(extensions.PlotReport(['main/accuracy', 'validation/main/accuracy'], 'epoch', file_name='accuracy_{name}.png'.format(**locals()), marker=None))
+    return trainer
+
 def main():
     print('Chainer Version: ' + chainer.__version__)
 
@@ -63,9 +86,6 @@ def main():
     model_class = L.Classifier(M.Classification(args.mapsize, 3))
 
     # Setup an optimizer
-    def make_optimizer(model, optimizer=chainer.optimizers.Adam()):
-        optimizer.setup(model)
-        return optimizer
     opt_class = make_optimizer(model_class, chainer.optimizers.AdaGrad())
 
     # Print parameters
@@ -105,24 +125,9 @@ def main():
     train_itr_class = chainer.iterators.SerialIterator(train_class, args.batchsize)
     test_itr_class  = chainer.iterators.SerialIterator(test_class, args.batchsize, repeat=False, shuffle=False)
 
+
     # Setup trainer
-    updater_class = training.StandardUpdater(train_itr_class, opt_class, device=args.gpu)
-    trainer_class = training.Trainer(updater_class, (args.epoch_class, 'epoch'), out=output_dir)
-    trainer_class.extend(extensions.LogReport(log_name='log_class.json'))
-    trainer_class.extend(extensions.Evaluator(test_itr_class, model_class, device=args.gpu))
-    trainer_class.extend(extensions.dump_graph(root_name='main/loss', out_name='cg_class.dot'))
-
-    if not args.no_print_log:
-        trainer_class.extend(extensions.PrintReport(['epoch', 'main/loss', 'validation/main/loss', 'main/accuracy', 'validation/main/accuracy', 'elapsed_time']))
-        trainer_class.extend(extensions.ProgressBar())
-    if args.snapshot:
-        trainer_class.extend(extensions.snapshot())
-        trainer_class.extend(extensions.snapshot_object(model_class, 'model_class_snapshot.model'))
-        trainer_class.extend(extensions.snapshot_object(opt_class, 'optimizer_class_snapshot.state'))
-    if extensions.PlotReport.available():
-        trainer_class.extend(extensions.PlotReport(['main/loss', 'validation/main/loss'], 'epoch', file_name='loss_class.png', marker=None))
-        trainer_class.extend(extensions.PlotReport(['main/accuracy', 'validation/main/accuracy'], 'epoch', file_name='accuracy_class.png', marker=None))
-
+    trainer_class = setup_trainer(model_class, opt_class, train_itr_class, test_itr_class, args.epoch_class, output_dir, 'class', gpu=args.gpu, no_print_log=args.no_print_log, snapshot=args.snapshot)
     trainer_class.run()
 
 
@@ -145,38 +150,20 @@ def main():
     test_itr_color  = chainer.iterators.SerialIterator(test_color, args.batchsize, repeat=False, shuffle=False)
 
     # Setup trainer
-    updater_color = training.StandardUpdater(train_itr_color, opt_color, device=args.gpu)
-    trainer_color = training.Trainer(updater_color, (args.epoch_color, 'epoch'), out=output_dir)
-    trainer_color.extend(extensions.LogReport(log_name='log_color.json'))
-    trainer_color.extend(extensions.Evaluator(test_itr_color, model_color, device=args.gpu))
-    trainer_color.extend(extensions.dump_graph(root_name='main/loss', out_name='cg_class.dot'))
-
-    if not args.no_print_log:
-        trainer_color.extend(extensions.PrintReport(['epoch', 'main/loss', 'validation/main/loss', 'main/accuracy', 'validation/main/accuracy', 'elapsed_time']))
-        trainer_color.extend(extensions.ProgressBar())
-    if args.snapshot:
-        trainer_color.extend(extensions.snapshot())
-        trainer_color.extend(extensions.snapshot_object(model_color, 'model_color_snapshot.model'))
-        trainer_color.extend(extensions.snapshot_object(opt_color, 'optimizer_color_snapshot.state'))
-    if extensions.PlotReport.available():
-        trainer_color.extend(extensions.PlotReport(['main/loss', 'validation/main/loss'], 'epoch', file_name='loss_color.png', marker=None))
-        trainer_color.extend(extensions.PlotReport(['main/accuracy', 'validation/main/accuracy'], 'epoch', file_name='accuracy_color.png', marker=None))
-
+    trainer_color = setup_trainer(model_color, opt_color, train_itr_color, test_itr_color, args.epoch_color, output_dir, 'color', gpu=args.gpu, no_print_log=args.no_print_log, snapshot=args.snapshot)
     trainer_color.run()
 
     # Save model/optimizer
     date = datetime.datetime.today().strftime("%m-%d_%H%M")
-    serializers.save_npz('{output_dir}/{date}_class.state'.format(**locals()), opt_class)
-    serializers.save_npz('{output_dir}/{date}_color.state'.format(**locals()), opt_color)
+    serializers.save_npz('{output_dir}/class.state'.format(**locals()), opt_class)
+    serializers.save_npz('{output_dir}/color.state'.format(**locals()), opt_color)
     if args.gpu >= 0:
-        serializers.save_npz('{output_dir}/{date}_class_gpu.model'.format(**locals()), model_class)
-        serializers.save_npz('{output_dir}/{date}_color_gpu.model'.format(**locals()), model_color)
-        serializers.save_npz('{output_dir}/{date}_class_cpu.model'.format(**locals()), copy.deepcopy(model_class).to_cpu())
-        serializers.save_npz('{output_dir}/{date}_color_cpu.model'.format(**locals()), copy.deepcopy(model_color).to_cpu())
+        serializers.save_npz('{output_dir}/class.model'.format(**locals()), copy.deepcopy(model_class).to_cpu())
+        serializers.save_npz('{output_dir}/color.model'.format(**locals()), copy.deepcopy(model_color).to_cpu())
     else:
-        serializers.save_npz('{output_dir}/{date}_class_cpu.model'.format(**locals()), model_class)
-        serializers.save_npz('{output_dir}/{date}_color_cpu.model'.format(**locals()), model_color)
-    print('model/optimizer Saved: {output_dir}/{date}.*'.format(**locals()))
+        serializers.save_npz('{output_dir}/class.model'.format(**locals()), model_class)
+        serializers.save_npz('{output_dir}/color.model'.format(**locals()), model_color)
+    print('model/optimizer Saved: {output_dir}/*'.format(**locals()))
 
     # Predict test images and Save output images
     if not args.no_out_image:
