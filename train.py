@@ -31,10 +31,13 @@ import util
 
 class DelGrad(object):
     name = 'DelGrad'
-    def __init__(self, target):
+    def __init__(self, target, targetEpoch):
         self.target = target
+        self.targetEpoch
 
     def __call__(self, optimizer):
+        if optimizer.epoch >= self.targetEpoch:
+            return
         for name, param in optimizer.target.namedparams():
             for t in self.target:
                 if t in name:
@@ -70,8 +73,8 @@ def main():
 
     parser = argparse.ArgumentParser(description='NN for Grayscale Image colorization')
     parser.add_argument('--batchsize', '-b', type=int, default=50, help='Number of images in each mini-batch')
-    parser.add_argument('--epoch_class', type=int, default=200, help='Number of sweeps over the dataset to train(classification model)')
-    parser.add_argument('--epoch_color', '-e', type=int, default=400, help='Number of sweeps over the dataset to train')
+    parser.add_argument('--epoch_class', type=int, default=300, help='Number of sweeps over the dataset to train(classification model)')
+    parser.add_argument('--epoch_color', '-e', type=int, default=400, help='Number of sweeps over the dataset to train(colorization model)')
     parser.add_argument('--dataset', '-d', default='./train', help='Directory of image files. Default is ./train')
     parser.add_argument('--out', '-o', default='./output', help='Directory to output the result')
     parser.add_argument('--gpu', '-g', type=int, default=-1, help='GPU ID (native value indicates CPU)')
@@ -139,7 +142,7 @@ def main():
     opt_color = make_optimizer(model_color, chainer.optimizers.Adam())
 
     if args.del_grad:
-        opt_color.add_hook(DelGrad(['conv1', 'conv2', 'conv3', 'conv4', 'conv5', 'conv6', 'conv7', 'conv8']))
+        opt_color.add_hook(DelGrad(['conv1', 'conv2', 'conv3', 'conv4', 'conv5', 'conv6', 'conv7', 'conv8'], int(args.epoch_color * 0.8)))
 
     # Setup for GPU
     if args.gpu >= 0:
