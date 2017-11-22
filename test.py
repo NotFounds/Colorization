@@ -18,12 +18,11 @@ def main():
     parser.add_argument('--model_color', default='./color.model')
     parser.add_argument('--out', '-o', default='./output', help='Directory to output the result')
     parser.add_argument('--gpu', '-g', type=int, default=-1, help='GPU ID (native value indicates CPU)')
-    parser.add_argument('--mapsize', type=int, default=8, help='Base size of convolution map')
     args = parser.parse_args()
 
     # Set up a neural network
-    model_class = L.Classifier(M.Classification(args.mapsize, 3))
-    model_color = M.Evalution(M.Colorization(args.mapsize, 3))
+    model_class = L.Classifier(M.Classification(3))
+    model_color = M.Evalution(M.Colorization(3))
 
     # Setup for GPU
     xp = np

@@ -78,7 +78,6 @@ def main():
     parser.add_argument('--dataset', '-d', default='./train', help='Directory of image files. Default is ./train')
     parser.add_argument('--out', '-o', default='./output', help='Directory to output the result')
     parser.add_argument('--gpu', '-g', type=int, default=-1, help='GPU ID (native value indicates CPU)')
-    parser.add_argument('--mapsize', type=int, default=8, help='Base size of convolution map')
     parser.add_argument('--snapshot', action='store_const', const=True, default=False, help='Take snapshot of the trainer/model/optimizer')
     parser.add_argument('--no_out_image', action='store_const', const=True, default=False)
     parser.add_argument('--no_print_log', action='store_const', const=True, default=False)
@@ -86,7 +85,7 @@ def main():
     args = parser.parse_args()
 
     # Set up a neural network to train
-    model_class = L.Classifier(M.Classification(args.mapsize, 3))
+    model_class = L.Classifier(M.Classification(3))
 
     # Setup an optimizer
     opt_class = make_optimizer(model_class, chainer.optimizers.AdaGrad())
@@ -95,7 +94,6 @@ def main():
     print('# Epoch Class: {args.epoch_class}'.format(**locals()))
     print('# Epoch Color: {args.epoch_color}'.format(**locals()))
     print('# BatchSize:   {args.batchsize}'.format(**locals()))
-    print('# Mapsize:     {args.mapsize}'.format(**locals()))
     print('# Dataset:     {args.dataset}'.format(**locals()))
 
     # Create Output directory
@@ -128,15 +126,13 @@ def main():
     train_itr_class = chainer.iterators.SerialIterator(train_class, args.batchsize)
     test_itr_class  = chainer.iterators.SerialIterator(test_class, args.batchsize, repeat=False, shuffle=False)
 
-
     # Setup trainer
     trainer_class = setup_trainer(model_class, opt_class, train_itr_class, test_itr_class, args.epoch_class, output_dir, 'class', gpu=args.gpu, no_print_log=args.no_print_log, snapshot=args.snapshot)
     trainer_class.run()
 
-
     # Set up a neural network to train
     net = opt_class.target.predictor.to_cpu()
-    model_color = M.Evalution(M.Colorization(args.mapsize, 3, net))
+    model_color = M.Evalution(M.Colorization(3, net))
 
     # Setup an optimizer
     opt_color = make_optimizer(model_color, chainer.optimizers.Adam())

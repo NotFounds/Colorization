@@ -66,7 +66,6 @@ $ python train.py [options]
 | --dataset, -d     | path  | the directory path of train data. default is `./train`.|
 | --out, -o         | path  | the directory path of output. default is `./output`.   |
 | --gpu, -g         | int   | gpu id. default is -1.(no gpu)                         |
-| --mapsize         | int   | base size of convolution map.                          |
 | --snapshot        | None  | take snapshot of the trainer/model/optimizer.          |
 | --no_out_image    | None  | don't output images.                                   |
 | --no_print_log    | None  | don't print log.                                       |
@@ -84,7 +83,6 @@ $ python test.py [options]
 | --model_class     | path  | the file path of learned NN model. default is `./class.model`.   |
 | --model_color     | path  | the file path of learned NN model. default is `./color.model`.   |
 | --gpu, -g         | int   | gpu id. default is -1.(no gpu)                                   |
-| --mapsize         | None  | base size of convolution map.                                    |
 
 # License
 MIT License
