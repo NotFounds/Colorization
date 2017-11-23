@@ -14,16 +14,16 @@ A simple colorization neural network.
 # Example
 
 ```
-$ python test.py --model_class ./examples/class.model --model_color ./examples/color.model --dataset ./examples/gray --mapsize 8
+$ python test.py --model_class ./examples/class.model --model_color ./examples/color.model --dataset ./examples/gray
 ```
 
 |Grayscale image|Output image|Classification|
 |---------------|------------|--------------|
 |![example1_gray](./examples/gray/1_in.png)|![example1_out](./examples/output/1_out.png)|88.7656%: Beach|
 |![example2_gray](./examples/gray/2_in.png)|![example2_out](./examples/output/2_out.png)|99.4129%: Sunset|
-|![example3_gray](./examples/gray/3_in.png)|![example3_out](./examples/output/3_out.png)|59.5202%: Glassland|
+|![example3_gray](./examples/gray/3_in.png)|![example3_out](./examples/output/3_out.png)|59.5202%: Grassland|
 
-# Instrations
+# Installations
 3 steps to install easily.
 
 1. Install [Python3.5](https://www.python.org/).
