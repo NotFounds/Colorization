@@ -33,7 +33,7 @@ class DelGrad(object):
     name = 'DelGrad'
     def __init__(self, target, targetEpoch):
         self.target = target
-        self.targetEpoch
+        self.targetEpoch = targetEpoch
 
     def __call__(self, optimizer):
         if optimizer.epoch >= self.targetEpoch:
@@ -138,7 +138,7 @@ def main():
     opt_color = make_optimizer(model_color, chainer.optimizers.Adam())
 
     if args.del_grad:
-        opt_color.add_hook(DelGrad(['conv1', 'conv2', 'conv3', 'conv4', 'conv5', 'conv6', 'conv7', 'conv8'], int(args.epoch_color * 0.8)))
+        opt_color.add_hook(DelGrad(['conv1', 'conv2', 'conv3', 'conv4', 'conv5', 'conv6', 'conv7', 'conv8'], targetEpoch=int(args.epoch_color * 0.8)))
 
     # Setup for GPU
     if args.gpu >= 0:
